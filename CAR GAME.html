@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Car Racing Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div id="score">Score: 0</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// LIGHT
+let light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(0, 10, 10);
+scene.add(light);
+
+// ROAD
+let roadGeometry = new THREE.PlaneGeometry(10, 200);
+let roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+let road = new THREE.Mesh(roadGeometry, roadMaterial);
+road.rotation.x = -Math.PI / 2;
+scene.add(road);
+
+// PLAYER CAR
+let carGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+let carMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+let playerCar = new THREE.Mesh(carGeometry, carMaterial);
+playerCar.position.y = 0.5;
+playerCar.position.z = 5;
+scene.add(playerCar);
+
+// ENEMY CARS
+let enemies = [];
+
+function createEnemy() {
+    let enemyGeo = new THREE.BoxGeometry(1, 0.5, 2);
+    let enemyMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+    let enemy = new THREE.Mesh(enemyGeo, enemyMat);
+
+    enemy.position.x = (Math.random() * 6) - 3;
+    enemy.position.y = 0.5;
+    enemy.position.z = -50;
+
+    scene.add(enemy);
+    enemies.push(enemy);
+}
+
+// CONTROLS
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// CAMERA
+camera.position.y = 5;
+camera.position.z = 10;
+camera.lookAt(playerCar.position);
+
+// GAME VARIABLES
+let speed = 0.2;
+let score = 0;
+
+// GAME LOOP
+function animate() {
+    requestAnimationFrame(animate);
+
+    // MOVE PLAYER
+    if (keys["ArrowLeft"] && playerCar.position.x > -4)
+        playerCar.position.x -= 0.2;
+
+    if (keys["ArrowRight"] && playerCar.position.x < 4)
+        playerCar.position.x += 0.2;
+
+    // MOVE ENEMIES
+    enemies.forEach(enemy => {
+        enemy.position.z += speed;
+
+        // COLLISION
+        if (
+            Math.abs(playerCar.position.x - enemy.position.x) < 1 &&
+            Math.abs(playerCar.position.z - enemy.position.z) < 2
+        ) {
+            alert("Game Over! Score: " + score);
+            location.reload();
+        }
+
+        // RESET ENEMY
+        if (enemy.position.z > 10) {
+            enemy.position.z = -50;
+            enemy.position.x = (Math.random() * 6) - 3;
+            score++;
+        }
+    });
+
+    // INCREASE DIFFICULTY
+    speed += 0.0005;
+
+    document.getElementById("score").innerText = "Score: " + score;
+
+    renderer.render(scene, camera);
+}
+
+// SPAWN ENEMIES
+for (let i = 0; i < 5; i++) {
+    createEnemy();
+}
+
+animate();
+</script>
+
+</body>
+</html>
